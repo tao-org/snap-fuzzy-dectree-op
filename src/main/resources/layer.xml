@@ -1,0 +1,37 @@
+<filesystem>
+
+    <folder name="Actions">
+        <folder name="Operators">
+            <file name="PyFuzzyDectreeOpAction.instance">
+                <attr name="instanceCreate"
+                      methodvalue="org.openide.awt.Actions.alwaysEnabled"/>
+                <attr name="delegate" methodvalue="org.esa.snap.core.gpf.ui.DefaultOperatorAction.create"/>
+                <attr name="operatorName" stringvalue="py_fuzzy_dectree_op"/>
+                <attr name="displayName" stringvalue="Python Fuzzy Decision Tree Processor"/>
+                <attr name="dialogTitle" stringvalue="Python Fuzzy Decision Tree Processor"/>
+                <attr name="helpId" stringvalue="pyFuzzyDectreeDoc"/>  <!--The helpId if help contents is provided-->
+                <attr name="targetProductNameSuffix" stringvalue="_fuzzydec"/>
+                <attr name="ShortDescription" stringvalue="Provides a fuzzy classification following given rules."/>
+            </file>
+        </folder>
+    </folder>
+
+    <folder name="Menu">
+        <folder name="Raster">
+            <folder name="Classification">
+                <file name="PyFuzzyDectreeOpAction.shadow">
+                    <attr name="originalFile" stringvalue="Actions/Operators/PyFuzzyDectreeOpAction.instance"/>
+                    <attr name="position" intvalue="0"/>
+                </file>
+            </folder>
+        </folder>
+    </folder>
+
+    <folder name="Services">
+        <folder name="JavaHelp">
+            <file name="helpset.xml" url="helpset.xml">
+                <attr name="position" intvalue="4600"/>
+            </file>
+        </folder>
+    </folder>
+</filesystem>
