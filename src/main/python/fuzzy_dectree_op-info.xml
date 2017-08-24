@@ -14,7 +14,7 @@
     <copyright>(C) 2017 Brockmann Consult GmbH</copyright>
 
     <description>
-        This is the SNAP Fuzzy Decision Tree operator, using the SNAP Python API.
+        A generic EO data operator for SNAP (Sentinel Toolbox) that uses fuzzy decision trees.
     </description>
 
     <namedSourceProducts>

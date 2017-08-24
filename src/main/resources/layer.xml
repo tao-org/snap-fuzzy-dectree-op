@@ -11,7 +11,7 @@
                 <attr name="dialogTitle" stringvalue="Python Fuzzy Decision Tree Processor"/>
                 <attr name="helpId" stringvalue="pyFuzzyDectreeDoc"/>  <!--The helpId if help contents is provided-->
                 <attr name="targetProductNameSuffix" stringvalue="_fuzzydec"/>
-                <attr name="ShortDescription" stringvalue="Provides a fuzzy classification following given rules."/>
+                <attr name="ShortDescription" stringvalue="A generic EO data operator that uses fuzzy decision trees."/>
             </file>
         </folder>
     </folder>
