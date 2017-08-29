@@ -8,12 +8,10 @@
 # For further questions please consult the forum at http://forum.step.esa.int
 ###################################################################################################
 
-import fuzzy_dectree_algo
-
 import sys
+
 for a in sys.path:
     print(a)
-
 
 import intertidal_flat_classif
 
@@ -28,6 +26,68 @@ from snappy import jpy
 Float = jpy.get_type('java.lang.Float')
 Color = jpy.get_type('java.awt.Color')
 
+INPUT_NAMES = [
+    ("b16", "reflec_1609"),
+    ("b2", "sand-wc_abundance"),
+    ("b19", "muschelindex"),
+    ("b3", "schatten_abundance"),
+    ("b13", "reflec_561"),
+    ("b7", "flh"),
+    ("b15", "reflec_865"),
+    ("b4", "summary_error"),
+    ("b14", "reflec_655"),
+    ("b5", "steigung_red_nIR"),
+    ("b8", "ndvi"),
+    ("b6", "steigung_nIR_SWIR1"),
+    ("b1", "sand-tr_abundance"),
+    ("b12", "reflec_483"),
+]
+INTERTIDAL_FLAT_CLASSIF = numpy.array([[8, 255, 0, 0],  # Muschel, final class + RGB code
+                                       [13, 255, 113, 255],  # Schill
+                                       [1, 255, 255, 75],  # Sand
+                                       [4, 125, 38, 205],  # Schlick
+                                       [2, 255, 215, 0],  # Misch
+                                       [5, 167, 80, 162],  # schlick_t
+                                       [9, 230, 230, 230],  # Strand
+                                       [11, 0, 0, 0],  # nodata
+                                       [12, 0, 60, 255],  # Wasser2
+                                       [10, 0, 0, 255],  # Wasser
+                                       [7, 46, 139, 87],  # dense2
+                                       [6, 0, 255, 0],  # dense1
+                                       [3, 238, 154, 0]])  # Misch2
+
+OUTPUT_NAMES = [
+    "Muschel",
+    "Schill",
+    "Sand",
+    "Schlick",
+    "Misch",
+    "schlick_t",
+    "Strand",
+    "nodata",
+    "Wasser2",
+    "Wasser",
+    "dense2",
+    "dense1",
+    "Misch2",
+]
+
+
+# _OutputSpec = [
+#     ("Muschel", float64[:]),
+#     ("Schill", float64[:]),
+#     ("Sand", float64[:]),
+#     ("Schlick", float64[:]),
+#     ("Misch", float64[:]),
+#     ("schlick_t", float64[:]),
+#     ("Strand", float64[:]),
+#     ("nodata", float64[:]),
+#     ("Wasser2", float64[:]),
+#     ("Wasser", float64[:]),
+#     ("dense2", float64[:]),
+#     ("dense1", float64[:]),
+#     ("Misch2", float64[:]),
+# ]
 
 class FuzzyDectreeOp:
     def __init__(self):
@@ -60,24 +120,12 @@ class FuzzyDectreeOp:
         #     ("b12", float64[:]),     # reflec_483
         # ]
 
-        self.band_b16 = source_product.getBand("reflec_1609")
-        self.band_b2 = source_product.getBand("sand-wc_abundance")
-        self.band_b19 = source_product.getBand("muschelindex")
-        self.band_b3 = source_product.getBand("schatten_abundance")
-        self.band_b13 = source_product.getBand("reflec_561")
-        self.band_b7 = source_product.getBand("flh")
-        self.band_b15 = source_product.getBand("reflec_865")
-        self.band_b4 = source_product.getBand("summary_error")
-        self.band_b14 = source_product.getBand("reflec_655")
-        self.band_b5 = source_product.getBand("steigung_red_nIR")
-        self.band_b8 = source_product.getBand("ndvi")
-        self.band_b6 = source_product.getBand("steigung_nIR_SWIR1")
-        self.band_b1 = source_product.getBand("sand-tr_abundance")
-        self.band_b12 = source_product.getBand("reflec_483")
+        self.source_bands = []
+        for input_name, column_name in INPUT_NAMES:
+            self.source_bands.append(source_product.getBand(column_name))
 
         # As it is always a good idea to separate responsibilities the algorithmic methods are put
         # into an other class
-        # self.algo = fuzzy_dectree_algo.FuzzyDectreeAlgo()
 
         # Create the target product
         target_product = snappy.Product('py_FuzzyDectree', 'py_FuzzyDectree', width, height)
@@ -108,21 +156,18 @@ class FuzzyDectreeOp:
         #     ("Misch2", float64[:]),
         # ]
 
-        # todo : what do we want to have in the target product? All output?
-        self.muschel_band = target_product.addBand('Muschel', snappy.ProductData.TYPE_FLOAT32)
-        self.schill_band = target_product.addBand('Schill', snappy.ProductData.TYPE_FLOAT32)
-        self.sand_band = target_product.addBand('Sand', snappy.ProductData.TYPE_FLOAT32)
-        self.schlick_band = target_product.addBand('Schlick', snappy.ProductData.TYPE_FLOAT32)
-        self.misch_band = target_product.addBand('Misch', snappy.ProductData.TYPE_FLOAT32)
-        self.schlick_t_band = target_product.addBand('Schlick_t', snappy.ProductData.TYPE_FLOAT32)
-        self.strand_band = target_product.addBand('Strand', snappy.ProductData.TYPE_FLOAT32)
-        self.wasser2_band = target_product.addBand('Wasser2', snappy.ProductData.TYPE_FLOAT32)
-        self.wasser_band = target_product.addBand('Wasser', snappy.ProductData.TYPE_FLOAT32)
-        self.dense2_band = target_product.addBand('Dense2', snappy.ProductData.TYPE_FLOAT32)
-        self.dense1_band = target_product.addBand('Dense1', snappy.ProductData.TYPE_FLOAT32)
-        self.misch2_band = target_product.addBand('Misch2', snappy.ProductData.TYPE_FLOAT32)
+        self.target_bands = []
+        for output_name in OUTPUT_NAMES:
+            target_band = target_product.addBand(output_name, snappy.ProductData.TYPE_FLOAT32)
+            self.target_bands.append(target_band)
 
-        self.classif_band = target_product.addBand('classification', snappy.ProductData.TYPE_INT16)
+        self.final_class_band = target_product.addBand('classification', snappy.ProductData.TYPE_INT16)
+        # todo: flag band/mask ?!
+        # flag_coding = self.create_flag_coding()
+        # group = target_product.getFlagCodingGroup()
+        # group.add(flag_coding)
+        # self.final_class_band.setSampleCoding(flag_coding)
+        # self.create_mask(target_product)
 
         # Provide the created target product to the framework so the computeTileStack method can be called
         # properly and the data can be written to disk.
@@ -132,139 +177,71 @@ class FuzzyDectreeOp:
         # The operator is asked by the framework to provide the data for a rectangle when the data is needed.
         # The required source data for the computation can be retrieved by getSourceTile(...) via the context object.
 
-        # _InputSpec = [
-        #     ("b16", float64[:]),     # reflec_1609
-        #     ("b2", float64[:]),      # sand-wc_abundance
-        #     ("bsum", float64[:]),    # b12 + b13 + b14
-        #     ("b19", float64[:]),     # muschelindex
-        #     ("b3", float64[:]),      # schatten_abundance
-        #     ("b13", float64[:]),     # reflec_561
-        #     ("b7", float64[:]),      # flh
-        #     ("b15", float64[:]),     # reflec_865
-        #     ("b4", float64[:]),      # summary_error
-        #     ("b14", float64[:]),     # reflec_655
-        #     ("b5", float64[:]),      # steigung_red_nIR
-        #     ("b8", float64[:]),      # ndvi
-        #     ("b100", float64[:]),    # summary_error
-        #     ("b6", float64[:]),      # steigung_nIR_SWIR1
-        #     ("b1", float64[:]),      # sand-tr_abundance
-        #     ("b12", float64[:]),     # reflec_483
-        # ]
-
-        b16_tile = context.getSourceTile(self.band_b16, target_rectangle)
-        b2_tile = context.getSourceTile(self.band_b2, target_rectangle)
-        b19_tile = context.getSourceTile(self.band_b19, target_rectangle)
-        b3_tile = context.getSourceTile(self.band_b3, target_rectangle)
-        b13_tile = context.getSourceTile(self.band_b13, target_rectangle)
-        b7_tile = context.getSourceTile(self.band_b7, target_rectangle)
-        b15_tile = context.getSourceTile(self.band_b15, target_rectangle)
-        b4_tile = context.getSourceTile(self.band_b4, target_rectangle)
-        b14_tile = context.getSourceTile(self.band_b14, target_rectangle)
-        b5_tile = context.getSourceTile(self.band_b5, target_rectangle)
-        b8_tile = context.getSourceTile(self.band_b8, target_rectangle)
-        b6_tile = context.getSourceTile(self.band_b6, target_rectangle)
-        b1_tile = context.getSourceTile(self.band_b1, target_rectangle)
-        b12_tile = context.getSourceTile(self.band_b12, target_rectangle)
+        source_tiles = []
+        for source_band in self.source_bands:
+            source_tiles.append(context.getSourceTile(source_band, target_rectangle))
 
         # The actual data can be retrieved from the tiles by getSampleFloats(), getSamplesDouble() or getSamplesInt()
         # Values at specific pixel locations can be retrieved for example by first_tile.getSampleFloat(x, y)
-        b16_samples = b16_tile.getSamplesFloat()
-        b2_samples = b2_tile.getSamplesFloat()
-        b19_samples = b19_tile.getSamplesFloat()
-        b3_samples = b3_tile.getSamplesFloat()
-        b13_samples = b13_tile.getSamplesFloat()
-        b7_samples = b7_tile.getSamplesFloat()
-        b15_samples = b15_tile.getSamplesFloat()
-        b4_samples = b4_tile.getSamplesFloat()
-        b14_samples = b14_tile.getSamplesFloat()
-        b5_samples = b5_tile.getSamplesFloat()
-        b8_samples = b8_tile.getSamplesFloat()
-        b6_samples = b6_tile.getSamplesFloat()
-        b1_samples = b1_tile.getSamplesFloat()
-        b12_samples = b12_tile.getSamplesFloat()
+        source_samples = []
+        for source_tile in source_tiles:
+            source_samples.append(source_tile.getSamplesFloat())
 
-        # Convert the data into numpy data. It is easier and faster to work with as if you use plain python arithmetic
-        b16_data = numpy.array(b16_samples, dtype=numpy.float64)
-        b2_data = numpy.array(b2_samples, dtype=numpy.float64)
-        b19_data = numpy.array(b19_samples, dtype=numpy.float64)
-        b3_data = numpy.array(b3_samples, dtype=numpy.float64)
-        b13_data = numpy.array(b13_samples, dtype=numpy.float64)
-        b7_data = numpy.array(b7_samples, dtype=numpy.float64)
-        b15_data = numpy.array(b15_samples, dtype=numpy.float64)
-        b4_data = numpy.array(b4_samples, dtype=numpy.float64)
-        b14_data = numpy.array(b14_samples, dtype=numpy.float64)
-        b5_data = numpy.array(b5_samples, dtype=numpy.float64)
-        b8_data = numpy.array(b8_samples, dtype=numpy.float64)
-        b6_data = numpy.array(b6_samples, dtype=numpy.float64)
-        b1_data = numpy.array(b1_samples, dtype=numpy.float64)
-        b12_data = numpy.array(b12_samples, dtype=numpy.float64)
+        source_data = []
+        for source_sample in source_samples:
+            source_data.append(numpy.array(source_sample, dtype=numpy.float64))
+        source_data = numpy.asarray(source_data)
 
-        classif_input = intertidal_flat_classif.Input(b1_data.size)
-        classif_input.b16 = b16_data
-        classif_input.b2 = b2_data
-        classif_input.b19 = b19_data
-        classif_input.b3 = b3_data
-        classif_input.b13 = b13_data
-        classif_input.b7 = b7_data
-        classif_input.b15 = b15_data
-        classif_input.b4 = b4_data
-        classif_input.b14 = b14_data
-        classif_input.b5 = b5_data
-        classif_input.b8 = b8_data
-        classif_input.b6 = b6_data
-        classif_input.b1 = b1_data
-        classif_input.b12 = b12_data
+        classif_input = intertidal_flat_classif.Input(source_data[0].size)
+        classif_input.b16 = source_data[0]
+        classif_input.b2 = source_data[1]
+        classif_input.b19 = source_data[2]
+        classif_input.b3 = source_data[3]
+        classif_input.b13 = source_data[4]
+        classif_input.b7 = source_data[5]
+        classif_input.b15 = source_data[6]
+        classif_input.b4 = source_data[7]
+        classif_input.b14 = source_data[8]
+        classif_input.b5 = source_data[9]
+        classif_input.b8 = source_data[10]
+        classif_input.b6 = source_data[11]
+        classif_input.b1 = source_data[12]
+        classif_input.b12 = source_data[13]
+        classif_input.bsum = source_data[13] + source_data[4] + source_data[8]
 
-        # _OutputSpec = [
-        #     ("Muschel", float64[:]),
-        #     ("Schill", float64[:]),
-        #     ("Sand", float64[:]),
-        #     ("Schlick", float64[:]),
-        #     ("Misch", float64[:]),
-        #     ("schlick_t", float64[:]),
-        #     ("Strand", float64[:]),
-        #     ("nodata", float64[:]),
-        #     ("Wasser2", float64[:]),
-        #     ("Wasser", float64[:]),
-        #     ("dense2", float64[:]),
-        #     ("dense1", float64[:]),
-        #     ("Misch2", float64[:]),
-        # ]
         classif_output = intertidal_flat_classif.Output(classif_input.b1.size)
+
+        target_samples = [classif_output.Muschel, classif_output.Schill, classif_output.Sand, classif_output.Schlick,
+                          classif_output.Misch, classif_output.schlick_t, classif_output.Strand, classif_output.nodata,
+                          classif_output.Wasser2, classif_output.Wasser, classif_output.dense2, classif_output.dense1,
+                          classif_output.Misch2]
 
         # Doing the actual computation
         intertidal_flat_classif.apply_rules(classif_input, classif_output)
 
         # The target tile which shall be filled with data are provided as parameter to this method
-        muschel_tile = target_tiles.get(self.muschel_band)
-        schill_tile = target_tiles.get(self.schill_band)
-        sand_tile = target_tiles.get(self.sand_band)
-        schlick_tile = target_tiles.get(self.schlick_band)
-        misch_tile = target_tiles.get(self.misch_band)
-        schlick_t_tile = target_tiles.get(self.schlick_t_band)
-        strand_tile = target_tiles.get(self.strand_band)
-        wasser2_tile = target_tiles.get(self.wasser2_band)
-        wasser_tile = target_tiles.get(self.wasser_band)
-        dense2_tile = target_tiles.get(self.dense2_band)
-        dense1_tile = target_tiles.get(self.dense1_band)
-        misch2_tile = target_tiles.get(self.misch2_band)
 
-        # Set the result to the target tiles
-        muschel_tile.setSamples(classif_output.Muschel)
-        schill_tile.setSamples(classif_output.Schill)
-        sand_tile.setSamples(classif_output.Sand)
-        schlick_tile.setSamples(classif_output.Schlick)
-        misch_tile.setSamples(classif_output.Misch)
-        schlick_t_tile.setSamples(classif_output.schlick_t)
-        strand_tile.setSamples(classif_output.Strand)
-        wasser2_tile.setSamples(classif_output.Wasser2)
-        wasser_tile.setSamples(classif_output.Wasser)
-        dense2_tile.setSamples(classif_output.dense2)
-        dense1_tile.setSamples(classif_output.dense1)
-        misch2_tile.setSamples(classif_output.Misch2)
+
+        for i in range(0, len(self.target_bands)):
+            target_tiles.get(self.target_bands[i]).setSamples(target_samples[i])
 
         # find pixel-wise maximum of classif_output to determine final class
+        final_class_tile = target_tiles.get(self.final_class_band)
+        final_class_data = numpy.empty(classif_output.Muschel.size, dtype=numpy.int16)
 
+        # todo: this block is very slow!!
+        for i in range(0, classif_output.Muschel.size):
+            max = sys.float_info.min
+            max_index = 0
+            j = 0
+            for target_sample in target_samples:
+                if target_sample[i] > max:
+                    max = target_sample[i]
+                    max_index = j
+                j += 1
+            final_class_data[i] = INTERTIDAL_FLAT_CLASSIF[max_index][0]
+
+        final_class_tile.setSamples(final_class_data)
 
     def dispose(self, context):
         pass
@@ -279,3 +256,69 @@ class FuzzyDectreeOp:
         if not band:
             raise RuntimeError('Product does not contain a band named', name)
         return band
+
+    def create_flag_coding(self):
+
+        # todo: discuss
+        fuzzyDecFlagCoding = snappy.FlagCoding('fuzzy_dec_flags')
+        fuzzyDecFlagCoding.addFlag("Muschel", 1, "Muschel")
+        fuzzyDecFlagCoding.addFlag("Schill", 2, "Schill")
+        fuzzyDecFlagCoding.addFlag("Sand", 4, "Sand")
+        fuzzyDecFlagCoding.addFlag("Schlick", 8, "Schlick")
+        fuzzyDecFlagCoding.addFlag("Misch", 16, "Misch")
+        fuzzyDecFlagCoding.addFlag("schlick_t", 32, "schlick_t")
+        fuzzyDecFlagCoding.addFlag("Strand", 64, "Strand")
+        fuzzyDecFlagCoding.addFlag("nodata", 128, "nodata")
+        fuzzyDecFlagCoding.addFlag("Wasser2", 256, "Wasser2")
+        fuzzyDecFlagCoding.addFlag("Wasser", 512, "Wasser")
+        fuzzyDecFlagCoding.addFlag("dense2", 1024, "dense2")
+        fuzzyDecFlagCoding.addFlag("dense1", 2048, "dense1")
+        fuzzyDecFlagCoding.addFlag("Misch2", 4096, "Misch2")
+
+        return fuzzyDecFlagCoding
+
+    def create_mask(self, product):
+
+        index = 0
+        w = product.getSceneRasterWidth()
+        h = product.getSceneRasterHeight()
+
+        # todo: snappy has no mapping for BandMathsType
+        mask = snappy.Mask.BandMathsType.create("MUSCHEL", "MUSCHEL", w, h, "Muschel", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("SCHILL", "SCHILL", w, h, "Schill", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("SAND", "SAND", w, h, "Sand", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("SCHLICK", "SCHLICK", w, h, "Schlick", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("MISCH", "MISCH", w, h, "Misch", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("SCHLICK_T", "SCHLICK_T", w, h, "schlick_t", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("STRAND", "STRAND", w, h, "Strand", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("NODATA", "NODATA", w, h, "nodata", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("WASSER2", "WASSER2", w, h, "Wasser2", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("WASSER", "WASSER", w, h, "Wasser", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("DENSE2", "DENSE2", w, h, "dense2", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("DENSE", "DENSE", w, h, "dense", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
+        index += 1
+        mask = snappy.Mask.BandMathsType.create("MISCH2", "MISCH2", w, h, "Misch2", Color(255, 0, 0), 0.5)
+        product.getMaskGroup().add(index, mask)
