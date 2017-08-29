@@ -1,8 +1,13 @@
 import os
 import unittest
 
-import sys
 import numpy as np
+
+INTERTIDAL_FLAT_CLASSIF = np.array([[8, 255, 0, 0],  # Muschel, final class + RGB code
+                                       [13, 255, 113, 255],  # Schill
+                                       [1, 255, 255, 75]])  # Sand
+
+INTERTIDAL_FLAT_CLASSIF_2 = np.array([8, 13, 1])
 
 # noinspection PyUnresolvedReferences
 class TestFuzzyDectree(unittest.TestCase):
@@ -11,24 +16,26 @@ class TestFuzzyDectree(unittest.TestCase):
         print('parentDir: ', self.parent_dir)
 
     def test_numpy_compare(self):
-        a1 = np.array([1.0, 3.0, 0.0, 2.0])
+        a1 = np.array([1.0, 3.0, 1.0, 2.0])
         a2 = np.array([0.0, 5.0, 0.0, 0.0])
         a3 = np.array([2.0, 0.0, 0.0, 4.0])
         samples = [a1, a2, a3]
+        samples2d = np.array(samples)
+        # samples2dswap = np.swapaxes(samples2d, 0, 1)
+        # i0 = np.argmax(samples2dswap[0])
+        # i1 = np.argmax(samples2dswap[1])
+        # i2 = np.argmax(samples2dswap[2])
+        # i3 = np.argmax(samples2dswap[3])
+        # ii = np.array([i0, i1, i2, i3])
+        #
+        # print('ii: ', ii)
 
-        max = np.empty(4)
-        max.fill(sys.float_info.min)
-        max_index = np.empty(4, dtype=np.int16)
-        max_index.fill(0)
-        j = 0
-        for sample in samples:
-            x = np.where(sample > max)
-            max[x] = sample
-            if sample > max:
-                max = sample
-                max_index = j
-            j += 1
-        print('max_index: ', max_index)
+        # jj = np.argmax(samples2dswap, axis=1)
+        kk = np.argmax(samples2d, axis=0)
+        print('kk: ', kk)
+
+        final_class_data = INTERTIDAL_FLAT_CLASSIF_2[kk]
+        print('final_class_data: ', final_class_data)
 
 
 print ('Testing fuzzy dectree')

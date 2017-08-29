@@ -42,19 +42,33 @@ INPUT_NAMES = [
     ("b1", "sand-tr_abundance"),
     ("b12", "reflec_483"),
 ]
-INTERTIDAL_FLAT_CLASSIF = numpy.array([[8, 255, 0, 0],  # Muschel, final class + RGB code
-                                       [13, 255, 113, 255],  # Schill
-                                       [1, 255, 255, 75],  # Sand
-                                       [4, 125, 38, 205],  # Schlick
-                                       [2, 255, 215, 0],  # Misch
-                                       [5, 167, 80, 162],  # schlick_t
-                                       [9, 230, 230, 230],  # Strand
-                                       [11, 0, 0, 0],  # nodata
-                                       [12, 0, 60, 255],  # Wasser2
-                                       [10, 0, 0, 255],  # Wasser
-                                       [7, 46, 139, 87],  # dense2
-                                       [6, 0, 255, 0],  # dense1
-                                       [3, 238, 154, 0]])  # Misch2
+INTERTIDAL_FLAT_CLASSIF_CLASS = numpy.array([8,   # Muschel, final class
+                                             13,  # Schill
+                                             1,   # Sand
+                                             4,   # Schlick
+                                             2,   # Misch
+                                             5,   # schlick_t
+                                             9,   # Strand
+                                             11,  # nodata
+                                             12,  # Wasser2
+                                             10,  # Wasser
+                                             7,   # dense2
+                                             6,   # dense1
+                                             3])  # Misch2
+
+INTERTIDAL_FLAT_CLASSIF_RGB = numpy.array([[255, 0, 0],  # Muschel, RGB code
+                                       [255, 113, 255],  # Schill
+                                       [255, 255, 75],   # Sand
+                                       [125, 38, 205],   # Schlick
+                                       [255, 215, 0],    # Misch
+                                       [167, 80, 162],   # schlick_t
+                                       [230, 230, 230],  # Strand
+                                       [0, 0, 0],        # nodata
+                                       [0, 60, 255],     # Wasser2
+                                       [0, 0, 255],      # Wasser
+                                       [46, 139, 87],    # dense2
+                                       [0, 255, 0],      # dense1
+                                       [238, 154, 0]])   # Misch2
 
 OUTPUT_NAMES = [
     "Muschel",
@@ -227,19 +241,24 @@ class FuzzyDectreeOp:
 
         # find pixel-wise maximum of classif_output to determine final class
         final_class_tile = target_tiles.get(self.final_class_band)
-        final_class_data = numpy.empty(classif_output.Muschel.size, dtype=numpy.int16)
 
         # todo: this block is very slow!!
-        for i in range(0, classif_output.Muschel.size):
-            max = sys.float_info.min
-            max_index = 0
-            j = 0
-            for target_sample in target_samples:
-                if target_sample[i] > max:
-                    max = target_sample[i]
-                    max_index = j
-                j += 1
-            final_class_data[i] = INTERTIDAL_FLAT_CLASSIF[max_index][0]
+        # final_class_data = numpy.empty(classif_output.Muschel.size, dtype=numpy.int16)
+        # for i in range(0, classif_output.Muschel.size):
+        #     max = sys.float_info.min
+        #     max_index = 0
+        #     j = 0
+        #     for target_sample in target_samples:
+        #         if target_sample[i] > max:
+        #             max = target_sample[i]
+        #             max_index = j
+        #         j += 1
+        #     final_class_data[i] = INTERTIDAL_FLAT_CLASSIF_CLASS[max_index]
+
+        # simple array based version:
+        target_samples_2d = numpy.array(target_samples)
+        max_indices = numpy.argmax(target_samples_2d, axis=0)
+        final_class_data = INTERTIDAL_FLAT_CLASSIF_CLASS[max_indices]
 
         final_class_tile.setSamples(final_class_data)
 
