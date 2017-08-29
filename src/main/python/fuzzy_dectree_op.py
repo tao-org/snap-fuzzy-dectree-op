@@ -9,6 +9,12 @@
 ###################################################################################################
 
 import fuzzy_dectree_algo
+
+import sys
+for a in sys.path:
+    print(a)
+
+
 import intertidal_flat_classif
 
 import numpy
@@ -55,7 +61,7 @@ class FuzzyDectreeOp:
         # ]
 
         self.band_b16 = source_product.getBand("reflec_1609")
-        self.band_b2 = source_product.getBand("wc_abundance")
+        self.band_b2 = source_product.getBand("sand-wc_abundance")
         self.band_b19 = source_product.getBand("muschelindex")
         self.band_b3 = source_product.getBand("schatten_abundance")
         self.band_b13 = source_product.getBand("reflec_561")
@@ -66,12 +72,12 @@ class FuzzyDectreeOp:
         self.band_b5 = source_product.getBand("steigung_red_nIR")
         self.band_b8 = source_product.getBand("ndvi")
         self.band_b6 = source_product.getBand("steigung_nIR_SWIR1")
-        self.band_b1 = source_product.getBand("sand")
+        self.band_b1 = source_product.getBand("sand-tr_abundance")
         self.band_b12 = source_product.getBand("reflec_483")
 
         # As it is always a good idea to separate responsibilities the algorithmic methods are put
         # into an other class
-        self.algo = fuzzy_dectree_algo.FuzzyDectreeAlgo()
+        # self.algo = fuzzy_dectree_algo.FuzzyDectreeAlgo()
 
         # Create the target product
         target_product = snappy.Product('py_FuzzyDectree', 'py_FuzzyDectree', width, height)
@@ -110,12 +116,13 @@ class FuzzyDectreeOp:
         self.misch_band = target_product.addBand('Misch', snappy.ProductData.TYPE_FLOAT32)
         self.schlick_t_band = target_product.addBand('Schlick_t', snappy.ProductData.TYPE_FLOAT32)
         self.strand_band = target_product.addBand('Strand', snappy.ProductData.TYPE_FLOAT32)
-        self.nodata_band = target_product.addBand('Wasser2', snappy.ProductData.TYPE_FLOAT32)
-        self.wasser2_band = target_product.addBand('Wasser', snappy.ProductData.TYPE_FLOAT32)
-        self.wasser_band = target_product.addBand('Muschel', snappy.ProductData.TYPE_FLOAT32)
+        self.wasser2_band = target_product.addBand('Wasser2', snappy.ProductData.TYPE_FLOAT32)
+        self.wasser_band = target_product.addBand('Wasser', snappy.ProductData.TYPE_FLOAT32)
         self.dense2_band = target_product.addBand('Dense2', snappy.ProductData.TYPE_FLOAT32)
         self.dense1_band = target_product.addBand('Dense1', snappy.ProductData.TYPE_FLOAT32)
         self.misch2_band = target_product.addBand('Misch2', snappy.ProductData.TYPE_FLOAT32)
+
+        self.classif_band = target_product.addBand('classification', snappy.ProductData.TYPE_INT16)
 
         # Provide the created target product to the framework so the computeTileStack method can be called
         # properly and the data can be written to disk.
@@ -192,24 +199,21 @@ class FuzzyDectreeOp:
         b1_data = numpy.array(b1_samples, dtype=numpy.float64)
         b12_data = numpy.array(b12_samples, dtype=numpy.float64)
 
-        input = intertidal_flat_classif.Input()
-        input.b16 = b16_data
-        input.b2 = b2_data
-        input.b19 = b19_data
-        input.b3 = b3_data
-        input.b13 = b13_data
-        input.b7 = b7_data
-        input.b15 = b15_data
-        input.b4 = b4_data
-        input.b14 = b14_data
-        input.b5 = b5_data
-        input.b8 = b8_data
-        input.b6 = b6_data
-        input.b1 = b1_data
-        input.b12 = b12_data
-
-        # Doing the actual computation
-        intertidal_flat_classif.apply_rules()
+        classif_input = intertidal_flat_classif.Input(b1_data.size)
+        classif_input.b16 = b16_data
+        classif_input.b2 = b2_data
+        classif_input.b19 = b19_data
+        classif_input.b3 = b3_data
+        classif_input.b13 = b13_data
+        classif_input.b7 = b7_data
+        classif_input.b15 = b15_data
+        classif_input.b4 = b4_data
+        classif_input.b14 = b14_data
+        classif_input.b5 = b5_data
+        classif_input.b8 = b8_data
+        classif_input.b6 = b6_data
+        classif_input.b1 = b1_data
+        classif_input.b12 = b12_data
 
         # _OutputSpec = [
         #     ("Muschel", float64[:]),
@@ -226,7 +230,10 @@ class FuzzyDectreeOp:
         #     ("dense1", float64[:]),
         #     ("Misch2", float64[:]),
         # ]
-        classif_output = intertidal_flat_classif.Output
+        classif_output = intertidal_flat_classif.Output(classif_input.b1.size)
+
+        # Doing the actual computation
+        intertidal_flat_classif.apply_rules(classif_input, classif_output)
 
         # The target tile which shall be filled with data are provided as parameter to this method
         muschel_tile = target_tiles.get(self.muschel_band)
@@ -255,6 +262,9 @@ class FuzzyDectreeOp:
         dense2_tile.setSamples(classif_output.dense2)
         dense1_tile.setSamples(classif_output.dense1)
         misch2_tile.setSamples(classif_output.Misch2)
+
+        # find pixel-wise maximum of classif_output to determine final class
+
 
     def dispose(self, context):
         pass
