@@ -4,9 +4,9 @@
 -->
 <operator>
     <!-- The name uniquely identifies the operator within SNAP -->
-    <name>org.esa.snap.python.FuzzyDectreeOp</name>
+    <name>org.esa.snap.python.IntertidalFlatFuzzyDectreeOp</name>
     <!-- The alias is a more user-friendly name, e.g. to be used on the command line -->
-    <alias>py_fuzzy_dectree_op</alias>
+    <alias>py_intertidal_flat_fuzzy_dectree_op</alias>
     <operatorClass>org.esa.snap.python.gpf.PyOperator</operatorClass>
 
     <version>1.0</version>
@@ -14,7 +14,7 @@
     <copyright>(C) 2017 Brockmann Consult GmbH</copyright>
 
     <description>
-        A generic EO data operator for SNAP (Sentinel Toolbox) that uses fuzzy decision trees.
+        A data operator for SNAP (Sentinel Toolbox) that uses a fuzzy decision tree for interdidal flat classification.
     </description>
 
     <namedSourceProducts>
@@ -28,16 +28,8 @@
     </namedSourceProducts>
 
     <parameters>
-        <parameter>
-            <!-- The name of the parameter; use context.getParameter('lowerFactor') in your Python code to retrieve the value -->
-            <name>param1</name>
-            <!-- The description is shown in the help on the command line and also as tooltip in the GUI -->
-            <description>First parameter.</description>
-            <!-- The type of the parameter; can be boolean, byte, short, int, long, float, double, java.lang.String -->
-            <dataType>double</dataType>
-            <!-- The default value of the parameter; this is used if no value is specified by the user -->
-            <defaultValue>1.0</defaultValue>
-        </parameter>
+        <!--<parameter>-->
+        <!--</parameter>-->
     </parameters>
 
 </operator>

@@ -13,4 +13,5 @@
 # (a)  water/mci.py  where mci.py defines the MciOp class
 # (b)  water/mci/__init__.py  where __init__.py defines the MciOp class
 
-fuzzy_dectree_op.FuzzyDectreeOp
+generic_fuzzy_dectree_op.GenericFuzzyDectreeOp
+intertidal_flat_fuzzy_dectree_op.IntertidalFlatFuzzyDectreeOp

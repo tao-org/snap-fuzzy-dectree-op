@@ -6,9 +6,9 @@
                 <attr name="instanceCreate"
                       methodvalue="org.openide.awt.Actions.alwaysEnabled"/>
                 <attr name="delegate" methodvalue="org.esa.snap.core.gpf.ui.DefaultOperatorAction.create"/>
-                <attr name="operatorName" stringvalue="py_fuzzy_dectree_op"/>
-                <attr name="displayName" stringvalue="Python Fuzzy Decision Tree Processor"/>
-                <attr name="dialogTitle" stringvalue="Python Fuzzy Decision Tree Processor"/>
+                <attr name="operatorName" stringvalue="py_intertidal_flat_fuzzy_dectree_op"/>
+                <attr name="displayName" stringvalue="Intertidal Flat Fuzzy Decision Tree"/>
+                <attr name="dialogTitle" stringvalue="Intertidal Flat Fuzzy Decision Tree"/>
                 <attr name="helpId" stringvalue="pyFuzzyDectreeDoc"/>  <!--The helpId if help contents is provided-->
                 <attr name="targetProductNameSuffix" stringvalue="_fuzzydec"/>
                 <attr name="ShortDescription" stringvalue="A generic EO data operator that uses fuzzy decision trees."/>
@@ -19,10 +19,12 @@
     <folder name="Menu">
         <folder name="Raster">
             <folder name="Classification">
-                <file name="PyFuzzyDectreeOpAction.shadow">
-                    <attr name="originalFile" stringvalue="Actions/Operators/PyFuzzyDectreeOpAction.instance"/>
-                    <attr name="position" intvalue="0"/>
-                </file>
+                <folder name="Fuzzy Classification">
+                    <file name="PyFuzzyDectreeOpAction.shadow">
+                        <attr name="originalFile" stringvalue="Actions/Operators/PyFuzzyDectreeOpAction.instance"/>
+                        <attr name="position" intvalue="0"/>
+                    </file>
+                </folder>
             </folder>
         </folder>
     </folder>

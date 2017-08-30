@@ -1,7 +1,7 @@
 ###################################################################################################
 # This operator class implementation serves as a template for writing SNAP operators in Python.
 # It is shown how thw source products and it's data is accessed, how the values
-# of the parameters, specified in the accompanying fuzzy_dectree_op-info.xml file, are retrieved and
+# of the parameters, specified in the accompanying generic_fuzzy_dectree_op-info.xml file, are retrieved and
 # validated. Also how the resulting target product can be defined along with flags, masks, etc. is
 # shown in this example. A guide about the development of a python operator can be found at
 # http://senbox.atlassian.net/wiki/display/SNAP/How+to+write+a+processor+in+Python
@@ -14,9 +14,10 @@ for a in sys.path:
     print(a)
 
 # import intertidal_flat_classif as fuzzy_classif
-import intertidal_flat_classif_opt as fuzzy_classif
+# import intertidal_flat_classif_opt as fuzzy_classif
+import intertidal_flat_classif_fuz as fuzzy_classif
 
-import numpy
+import numpy as np
 import snappy
 
 # If a Java type is needed which is not imported by snappy by default it can be retrieved manually.
@@ -29,6 +30,9 @@ Color = jpy.get_type('java.awt.Color')
 
 IndexCoding = jpy.get_type('org.esa.snap.core.datamodel.IndexCoding')
 BandMathsType = jpy.get_type('org.esa.snap.core.datamodel.Mask$BandMathsType')
+ColorPaletteDef = jpy.get_type('org.esa.snap.core.datamodel.ColorPaletteDef')
+ColorPoint = jpy.get_type('org.esa.snap.core.datamodel.ColorPaletteDef$Point')
+ImageInfo = jpy.get_type('org.esa.snap.core.datamodel.ImageInfo')
 
 # _InputSpec = [
 #     ("b1", float64[:]),      # sand-tr_abundance
@@ -65,7 +69,7 @@ INPUT_NAMES = [
 ]
 
 # final class
-INTERTIDAL_FLAT_CLASSIF_CLASS = numpy.array([
+INTERTIDAL_FLAT_CLASSIF_CLASS = np.array([
     11,  # nodata
     10,  # Wasser
     13,  # Schill
@@ -81,7 +85,7 @@ INTERTIDAL_FLAT_CLASSIF_CLASS = numpy.array([
     12])  # Wasser2
 
 # RGB code
-INTERTIDAL_FLAT_CLASSIF_RGB = numpy.array([
+INTERTIDAL_FLAT_CLASSIF_RGB = np.array([
     [0, 0, 0],  # nodata
     [0, 0, 255],  # Wasser
     [255, 113, 255],  # Schill
@@ -130,7 +134,7 @@ OUTPUT_NAMES = [
 # ]
 
 
-class FuzzyDectreeOp:
+class IntertidalFlatFuzzyDectreeOp:
     def __init__(self):
         self.target_band = None
 
@@ -166,8 +170,8 @@ class FuzzyDectreeOp:
             target_band = target_product.addBand(output_name, snappy.ProductData.TYPE_FLOAT32)
             self.target_bands.append(target_band)
 
-        # self.final_class_band = target_product.addBand('classification', snappy.ProductData.TYPE_INT16)
-        self.final_class_band = target_product.addBand('classification', snappy.ProductData.TYPE_INT8)
+        self.final_class_band = self.add_final_class_band(target_product)
+        self.fuzzy_max_value_band = target_product.addBand('fuzzy_max_value', snappy.ProductData.TYPE_FLOAT32)
         # todo: flag band/mask ?!
         # flag_coding = self.create_flag_coding()
         # group = target_product.getFlagCodingGroup()
@@ -195,8 +199,8 @@ class FuzzyDectreeOp:
 
         source_data = []
         for source_sample in source_samples:
-            source_data.append(numpy.array(source_sample, dtype=numpy.float64))
-        source_data = numpy.asarray(source_data)
+            source_data.append(np.array(source_sample, dtype=np.float64))
+        source_data = np.asarray(source_data)
 
         classif_input = fuzzy_classif.Input(source_data[0].size)
         classif_input.b1 = source_data[0]
@@ -230,10 +234,13 @@ class FuzzyDectreeOp:
             target_tiles.get(self.target_bands[i]).setSamples(target_samples[i])
 
         # find pixel-wise maximum of classif_output to determine final class
-        target_samples_np = numpy.array(target_samples)
-        max_indices = numpy.argmax(target_samples_np, axis=0)
+        target_samples_np = np.array(target_samples)
+        max_indices = np.argmax(target_samples_np, axis=0)
         final_class_data = INTERTIDAL_FLAT_CLASSIF_CLASS[max_indices]
         target_tiles.get(self.final_class_band).setSamples(final_class_data)
+
+        fuzzy_max_values = np.amax(target_samples_np, axis=0)
+        target_tiles.get(self.fuzzy_max_value_band).setSamples(fuzzy_max_values)
 
     def dispose(self, context):
         pass
@@ -251,7 +258,7 @@ class FuzzyDectreeOp:
 
     def create_flag_coding(self):
 
-        # todo: discuss
+        # todo: discuss (not yet needed)
         fuzzyDecFlagCoding = snappy.FlagCoding('fuzzy_dec_flags')
         fuzzyDecFlagCoding.addFlag("Muschel", 1, "Muschel")
         fuzzyDecFlagCoding.addFlag("Schill", 2, "Schill")
@@ -271,11 +278,11 @@ class FuzzyDectreeOp:
 
     def create_mask(self, product):
 
+        # todo: discuss (not yet needed)
         index = 0
         w = product.getSceneRasterWidth()
         h = product.getSceneRasterHeight()
 
-        # todo: snappy has no mapping for BandMathsType
         mask = snappy.Mask.BandMathsType.create("MUSCHEL", "MUSCHEL", w, h, "Muschel", Color(255, 0, 0), 0.5)
         product.getMaskGroup().add(index, mask)
         index += 1
@@ -314,3 +321,29 @@ class FuzzyDectreeOp:
         index += 1
         mask = snappy.Mask.BandMathsType.create("MISCH2", "MISCH2", w, h, "Misch2", Color(255, 0, 0), 0.5)
         product.getMaskGroup().add(index, mask)
+
+    def add_final_class_band(self, target_product):
+        final_class_band = target_product.addBand('final_class', snappy.ProductData.TYPE_INT8)
+
+        index_coding = IndexCoding('final_class')
+
+        points = []
+        for i in range(0, len(INTERTIDAL_FLAT_CLASSIF_CLASS)):
+            value = np.asscalar(INTERTIDAL_FLAT_CLASSIF_CLASS[i])
+            r = np.asscalar(INTERTIDAL_FLAT_CLASSIF_RGB[i][0])
+            g = np.asscalar(INTERTIDAL_FLAT_CLASSIF_RGB[i][1])
+            b = np.asscalar(INTERTIDAL_FLAT_CLASSIF_RGB[i][2])
+            col = Color(r, g, b)
+            descr = OUTPUT_NAMES[i]
+            point = ColorPoint(value, col, descr)
+            points.append(point)
+            index_coding.addIndex(descr, value, descr)
+
+        cpd = ColorPaletteDef(points)
+        ii = ImageInfo(cpd)
+        final_class_band.setImageInfo(ii)
+
+        target_product.getIndexCodingGroup().add(index_coding)
+        final_class_band.setSampleCoding(index_coding)
+
+        return final_class_band
