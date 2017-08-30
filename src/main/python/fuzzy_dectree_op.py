@@ -13,7 +13,8 @@ import sys
 for a in sys.path:
     print(a)
 
-import intertidal_flat_classif
+# import intertidal_flat_classif as fuzzy_classif
+import intertidal_flat_classif_opt as fuzzy_classif
 
 import numpy
 import snappy
@@ -175,7 +176,8 @@ class FuzzyDectreeOp:
             target_band = target_product.addBand(output_name, snappy.ProductData.TYPE_FLOAT32)
             self.target_bands.append(target_band)
 
-        self.final_class_band = target_product.addBand('classification', snappy.ProductData.TYPE_INT16)
+        # self.final_class_band = target_product.addBand('classification', snappy.ProductData.TYPE_INT16)
+        self.final_class_band = target_product.addBand('classification', snappy.ProductData.TYPE_INT8)
         # todo: flag band/mask ?!
         # flag_coding = self.create_flag_coding()
         # group = target_product.getFlagCodingGroup()
@@ -206,7 +208,7 @@ class FuzzyDectreeOp:
             source_data.append(numpy.array(source_sample, dtype=numpy.float64))
         source_data = numpy.asarray(source_data)
 
-        classif_input = intertidal_flat_classif.Input(source_data[0].size)
+        classif_input = fuzzy_classif.Input(source_data[0].size)
         classif_input.b16 = source_data[0]
         classif_input.b2 = source_data[1]
         classif_input.b19 = source_data[2]
@@ -223,7 +225,7 @@ class FuzzyDectreeOp:
         classif_input.b12 = source_data[13]
         classif_input.bsum = source_data[13] + source_data[4] + source_data[8]
 
-        classif_output = intertidal_flat_classif.Output(classif_input.b1.size)
+        classif_output = fuzzy_classif.Output(classif_input.b1.size)
 
         target_samples = [classif_output.Muschel, classif_output.Schill, classif_output.Sand, classif_output.Schlick,
                           classif_output.Misch, classif_output.schlick_t, classif_output.Strand, classif_output.nodata,
@@ -231,36 +233,17 @@ class FuzzyDectreeOp:
                           classif_output.Misch2]
 
         # Doing the actual computation
-        intertidal_flat_classif.apply_rules(classif_input, classif_output)
+        fuzzy_classif.apply_rules(classif_input, classif_output)
 
         # The target tile which shall be filled with data are provided as parameter to this method
-
-
         for i in range(0, len(self.target_bands)):
             target_tiles.get(self.target_bands[i]).setSamples(target_samples[i])
 
         # find pixel-wise maximum of classif_output to determine final class
-        final_class_tile = target_tiles.get(self.final_class_band)
-
-        # todo: this block is very slow!!
-        # final_class_data = numpy.empty(classif_output.Muschel.size, dtype=numpy.int16)
-        # for i in range(0, classif_output.Muschel.size):
-        #     max = sys.float_info.min
-        #     max_index = 0
-        #     j = 0
-        #     for target_sample in target_samples:
-        #         if target_sample[i] > max:
-        #             max = target_sample[i]
-        #             max_index = j
-        #         j += 1
-        #     final_class_data[i] = INTERTIDAL_FLAT_CLASSIF_CLASS[max_index]
-
-        # simple array based version:
-        target_samples_2d = numpy.array(target_samples)
-        max_indices = numpy.argmax(target_samples_2d, axis=0)
+        target_samples_np = numpy.array(target_samples)
+        max_indices = numpy.argmax(target_samples_np, axis=0)
         final_class_data = INTERTIDAL_FLAT_CLASSIF_CLASS[max_indices]
-
-        final_class_tile.setSamples(final_class_data)
+        target_tiles.get(self.final_class_band).setSamples(final_class_data)
 
     def dispose(self, context):
         pass
