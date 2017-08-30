@@ -27,82 +27,108 @@ from snappy import jpy
 Float = jpy.get_type('java.lang.Float')
 Color = jpy.get_type('java.awt.Color')
 
-INPUT_NAMES = [
-    ("b16", "reflec_1609"),
-    ("b2", "sand-wc_abundance"),
-    ("b19", "muschelindex"),
-    ("b3", "schatten_abundance"),
-    ("b13", "reflec_561"),
-    ("b7", "flh"),
-    ("b15", "reflec_865"),
-    ("b4", "summary_error"),
-    ("b14", "reflec_655"),
-    ("b5", "steigung_red_nIR"),
-    ("b8", "ndvi"),
-    ("b6", "steigung_nIR_SWIR1"),
-    ("b1", "sand-tr_abundance"),
-    ("b12", "reflec_483"),
-]
-INTERTIDAL_FLAT_CLASSIF_CLASS = numpy.array([8,   # Muschel, final class
-                                             13,  # Schill
-                                             1,   # Sand
-                                             4,   # Schlick
-                                             2,   # Misch
-                                             5,   # schlick_t
-                                             9,   # Strand
-                                             11,  # nodata
-                                             12,  # Wasser2
-                                             10,  # Wasser
-                                             7,   # dense2
-                                             6,   # dense1
-                                             3])  # Misch2
+IndexCoding = jpy.get_type('org.esa.snap.core.datamodel.IndexCoding')
+BandMathsType = jpy.get_type('org.esa.snap.core.datamodel.Mask$BandMathsType')
 
-INTERTIDAL_FLAT_CLASSIF_RGB = numpy.array([[255, 0, 0],  # Muschel, RGB code
-                                       [255, 113, 255],  # Schill
-                                       [255, 255, 75],   # Sand
-                                       [125, 38, 205],   # Schlick
-                                       [255, 215, 0],    # Misch
-                                       [167, 80, 162],   # schlick_t
-                                       [230, 230, 230],  # Strand
-                                       [0, 0, 0],        # nodata
-                                       [0, 60, 255],     # Wasser2
-                                       [0, 0, 255],      # Wasser
-                                       [46, 139, 87],    # dense2
-                                       [0, 255, 0],      # dense1
-                                       [238, 154, 0]])   # Misch2
+# _InputSpec = [
+#     ("b1", float64[:]),      # sand-tr_abundance
+#     ("b2", float64[:]),      # sand-wc_abundance
+#     ("b3", float64[:]),      # schatten_abundance
+#     ("b4", float64[:]),      # summary_error
+#     ("b5", float64[:]),      # steigung_red_nIR
+#     ("b6", float64[:]),      # steigung_nIR_SWIR1
+#     ("b7", float64[:]),      # flh
+#     ("b8", float64[:]),      # ndvi
+#     ("b12", float64[:]),     # reflec_483
+#     ("b13", float64[:]),     # reflec_561
+#     ("b14", float64[:]),     # reflec_655
+#     ("b15", float64[:]),     # reflec_865
+#     ("b16", float64[:]),     # reflec_1609
+#     ("b19", float64[:]),     # muschelindex
+# ]
+
+INPUT_NAMES = [
+    ("b1", "sand-tr_abundance"),
+    ("b2", "sand-wc_abundance"),
+    ("b3", "schatten_abundance"),
+    ("b4", "summary_error"),
+    ("b5", "steigung_red_nIR"),
+    ("b6", "steigung_nIR_SWIR1"),
+    ("b7", "flh"),
+    ("b8", "ndvi"),
+    ("b12", "reflec_483"),
+    ("b13", "reflec_561"),
+    ("b14", "reflec_655"),
+    ("b15", "reflec_865"),
+    ("b16", "reflec_1609"),
+    ("b19", "muschelindex")
+]
+
+# final class
+INTERTIDAL_FLAT_CLASSIF_CLASS = numpy.array([
+    11,  # nodata
+    10,  # Wasser
+    13,  # Schill
+    8,  # Muschel
+    7,  # dense2
+    6,  # dense1
+    9,  # Strand
+    1,  # Sand
+    2,  # Misch
+    3,  # Misch2
+    4,  # Schlick
+    5,  # schlick_t
+    12])  # Wasser2
+
+# RGB code
+INTERTIDAL_FLAT_CLASSIF_RGB = numpy.array([
+    [0, 0, 0],  # nodata
+    [0, 0, 255],  # Wasser
+    [255, 113, 255],  # Schill
+    [255, 0, 0],  # Muschel,
+    [46, 139, 87],  # dense2
+    [0, 255, 0],  # dense1
+    [230, 230, 230],  # Strand
+    [255, 255, 75],  # Sand
+    [255, 215, 0],  # Misch
+    [238, 154, 0],  # Misch2
+    [125, 38, 205],  # Schlick
+    [167, 80, 162],  # schlick_t
+    [0, 60, 255]])  # Wasser2
 
 OUTPUT_NAMES = [
-    "Muschel",
-    "Schill",
-    "Sand",
-    "Schlick",
-    "Misch",
-    "schlick_t",
-    "Strand",
     "nodata",
-    "Wasser2",
     "Wasser",
+    "Schill",
+    "Muschel",
     "dense2",
     "dense1",
+    "Strand",
+    "Sand",
+    "Misch",
     "Misch2",
+    "Schlick",
+    "schlick_t",
+    "Wasser2"
 ]
 
 
 # _OutputSpec = [
-#     ("Muschel", float64[:]),
-#     ("Schill", float64[:]),
-#     ("Sand", float64[:]),
-#     ("Schlick", float64[:]),
-#     ("Misch", float64[:]),
-#     ("schlick_t", float64[:]),
-#     ("Strand", float64[:]),
 #     ("nodata", float64[:]),
-#     ("Wasser2", float64[:]),
 #     ("Wasser", float64[:]),
+#     ("Schill", float64[:]),
+#     ("Muschel", float64[:]),
 #     ("dense2", float64[:]),
 #     ("dense1", float64[:]),
+#     ("Strand", float64[:]),
+#     ("Sand", float64[:]),
+#     ("Misch", float64[:]),
 #     ("Misch2", float64[:]),
+#     ("Schlick", float64[:]),
+#     ("schlick_t", float64[:]),
+#     ("Wasser2", float64[:]),
 # ]
+
 
 class FuzzyDectreeOp:
     def __init__(self):
@@ -115,25 +141,6 @@ class FuzzyDectreeOp:
 
         width = source_product.getSceneRasterWidth()
         height = source_product.getSceneRasterHeight()
-
-        # _InputSpec = [
-        #     ("b16", float64[:]),     # reflec_1609
-        #     ("b2", float64[:]),      # sand-wc_abundance
-        #     ("bsum", float64[:]),    # b12 + b13 + b14
-        #     ("b19", float64[:]),     # muschelindex
-        #     ("b3", float64[:]),      # schatten_abundance
-        #     ("b13", float64[:]),     # reflec_561
-        #     ("b7", float64[:]),      # flh
-        #     ("b15", float64[:]),     # reflec_865
-        #     ("b4", float64[:]),      # summary_error
-        #     ("b14", float64[:]),     # reflec_655
-        #     ("b5", float64[:]),      # steigung_red_nIR
-        #     ("b8", float64[:]),      # ndvi
-        #     ("b100", float64[:]),    # summary_error
-        #     ("b6", float64[:]),      # steigung_nIR_SWIR1
-        #     ("b1", float64[:]),      # sand-tr_abundance
-        #     ("b12", float64[:]),     # reflec_483
-        # ]
 
         self.source_bands = []
         for input_name, column_name in INPUT_NAMES:
@@ -154,23 +161,6 @@ class FuzzyDectreeOp:
         target_product.setEndTime(source_product.getEndTime())
 
         # Adding new bands to the target product is straight forward.
-
-        # _OutputSpec = [
-        #     ("Muschel", float64[:]),
-        #     ("Schill", float64[:]),
-        #     ("Sand", float64[:]),
-        #     ("Schlick", float64[:]),
-        #     ("Misch", float64[:]),
-        #     ("schlick_t", float64[:]),
-        #     ("Strand", float64[:]),
-        #     ("nodata", float64[:]),
-        #     ("Wasser2", float64[:]),
-        #     ("Wasser", float64[:]),
-        #     ("dense2", float64[:]),
-        #     ("dense1", float64[:]),
-        #     ("Misch2", float64[:]),
-        # ]
-
         self.target_bands = []
         for output_name in OUTPUT_NAMES:
             target_band = target_product.addBand(output_name, snappy.ProductData.TYPE_FLOAT32)
@@ -209,28 +199,28 @@ class FuzzyDectreeOp:
         source_data = numpy.asarray(source_data)
 
         classif_input = fuzzy_classif.Input(source_data[0].size)
-        classif_input.b16 = source_data[0]
+        classif_input.b1 = source_data[0]
         classif_input.b2 = source_data[1]
-        classif_input.b19 = source_data[2]
-        classif_input.b3 = source_data[3]
-        classif_input.b13 = source_data[4]
-        classif_input.b7 = source_data[5]
-        classif_input.b15 = source_data[6]
-        classif_input.b4 = source_data[7]
-        classif_input.b14 = source_data[8]
-        classif_input.b5 = source_data[9]
-        classif_input.b8 = source_data[10]
-        classif_input.b6 = source_data[11]
-        classif_input.b1 = source_data[12]
-        classif_input.b12 = source_data[13]
-        classif_input.bsum = source_data[13] + source_data[4] + source_data[8]
+        classif_input.b3 = source_data[2]
+        classif_input.b4 = source_data[3]
+        classif_input.b5 = source_data[4]
+        classif_input.b6 = source_data[5]
+        classif_input.b7 = source_data[6]
+        classif_input.b8 = source_data[7]
+        classif_input.b12 = source_data[8]
+        classif_input.b13 = source_data[9]
+        classif_input.b14 = source_data[10]
+        classif_input.b15 = source_data[11]
+        classif_input.b16 = source_data[12]
+        classif_input.b19 = source_data[13]
+        classif_input.bsum = source_data[8] + source_data[9] + source_data[10]  # b12 + b13 + b14
 
         classif_output = fuzzy_classif.Output(classif_input.b1.size)
 
-        target_samples = [classif_output.Muschel, classif_output.Schill, classif_output.Sand, classif_output.Schlick,
-                          classif_output.Misch, classif_output.schlick_t, classif_output.Strand, classif_output.nodata,
-                          classif_output.Wasser2, classif_output.Wasser, classif_output.dense2, classif_output.dense1,
-                          classif_output.Misch2]
+        target_samples = [classif_output.nodata, classif_output.Wasser, classif_output.Schill, classif_output.Muschel,
+                          classif_output.dense2, classif_output.dense1, classif_output.Strand, classif_output.Sand,
+                          classif_output.Misch, classif_output.Misch2, classif_output.Schlick, classif_output.schlick_t,
+                          classif_output.Wasser2]
 
         # Doing the actual computation
         fuzzy_classif.apply_rules(classif_input, classif_output)
