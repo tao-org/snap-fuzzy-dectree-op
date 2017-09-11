@@ -2,7 +2,7 @@
 
     <folder name="Actions">
         <folder name="Operators">
-            <file name="PyFuzzyDectreeOpAction.instance">
+            <file name="PyIntertidalFlatFuzzyDectreeOpAction.instance">
                 <attr name="instanceCreate"
                       methodvalue="org.openide.awt.Actions.alwaysEnabled"/>
                 <attr name="delegate" methodvalue="org.esa.snap.core.gpf.ui.DefaultOperatorAction.create"/>
@@ -11,7 +11,7 @@
                 <attr name="dialogTitle" stringvalue="Intertidal Flat Fuzzy Decision Tree"/>
                 <attr name="helpId" stringvalue="pyFuzzyDectreeDoc"/>  <!--The helpId if help contents is provided-->
                 <attr name="targetProductNameSuffix" stringvalue="_fuzzydec"/>
-                <attr name="ShortDescription" stringvalue="A generic EO data operator that uses fuzzy decision trees."/>
+                <attr name="ShortDescription" stringvalue="An operator that uses a fuzzy decision trees for intertidal flat classification."/>
             </file>
         </folder>
     </folder>
@@ -20,9 +20,10 @@
         <folder name="Raster">
             <folder name="Classification">
                 <folder name="Fuzzy Classification">
-                    <file name="PyFuzzyDectreeOpAction.shadow">
-                        <attr name="originalFile" stringvalue="Actions/Operators/PyFuzzyDectreeOpAction.instance"/>
+                    <file name="PyIntertidalFlatFuzzyDectreeOpAction.shadow">
+                        <attr name="originalFile" stringvalue="Actions/Operators/PyIntertidalFlatFuzzyDectreeOpAction.instance"/>
                         <attr name="position" intvalue="0"/>
+                        <attr name="displayName" stringvalue="Fuzzy Classification"/>
                     </file>
                 </folder>
             </folder>
